@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "prepack": "npm run build",
     "prepublishOnly": "npm run build"
   },
   "keywords": [

@@ -20,14 +20,18 @@ npm install spacetimedb-mcp
 
 Add the server to your `mcp.json` configuration file (typically located in your home directory under `.config/mcp.json` or similar, depending on your MCP client).
 
-### Basic Configuration
+### Basic Configuration (Global Installation)
+
+If you've installed the package globally (`npm install -g spacetimedb-mcp`), use one of these methods:
+
+**Option 1: Use npx (Recommended)**
 
 ```json
 {
   "mcpServers": {
     "spacetimedb": {
-      "command": "node",
-      "args": ["node_modules/spacetimedb-mcp/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "spacetimedb-mcp"],
       "env": {
         "SPACETIMEDB_HOST": "http://localhost:3000",
         "SPACETIMEDB_TOKEN": "your-token-here",
@@ -38,16 +42,47 @@ Add the server to your `mcp.json` configuration file (typically located in your 
 }
 ```
 
-### Using npx (Alternative)
+**Option 2: Use the global package path**
 
-If you prefer using `npx`:
+First, find your global node_modules path:
+```bash
+npm root -g
+```
 
+Then use that path in your config:
 ```json
 {
   "mcpServers": {
     "spacetimedb": {
-      "command": "npx",
-      "args": ["-y", "spacetimedb-mcp"],
+      "command": "node",
+      "args": ["C:/nvm4w/nodejs/node_modules/spacetimedb-mcp/dist/index.js"],
+      "env": {
+        "SPACETIMEDB_HOST": "http://localhost:3000",
+        "SPACETIMEDB_TOKEN": "your-token-here",
+        "SPACETIMEDB_DEFAULT_DATABASE": "strc"
+      }
+    }
+  }
+}
+```
+
+**Note:** Replace `C:/nvm4w/nodejs/node_modules` with your actual global npm root path from `npm root -g`.
+
+### Local Installation
+
+If you prefer installing locally in your project:
+
+```bash
+npm install spacetimedb-mcp
+```
+
+Then configure:
+```json
+{
+  "mcpServers": {
+    "spacetimedb": {
+      "command": "node",
+      "args": ["node_modules/spacetimedb-mcp/dist/index.js"],
       "env": {
         "SPACETIMEDB_HOST": "http://localhost:3000",
         "SPACETIMEDB_TOKEN": "your-token-here",
