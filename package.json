@@ -1,0 +1,46 @@
+{
+  "name": "spacetimedb-mcp",
+  "version": "1.0.0",
+  "description": "Model Context Protocol server for SpacetimeDB - query databases, call reducers, and manage your SpacetimeDB instances",
+  "main": "dist/index.js",
+  "bin": {
+    "spacetimedb-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "spacetimedb",
+    "database",
+    "realtime",
+    "sql",
+    "reducers"
+  ],
+  "author": "Fail2.Fail",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Fail2Fail-Studios/spacetimedb-mcp.git"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.2",
+    "axios": "^1.13.2",
+    "dotenv": "^17.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.9",
+    "typescript": "^5.9.3"
+  }
+}
