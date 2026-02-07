@@ -36,3 +36,5 @@ coverage/
 *.tmp
 Untitled
 dist/Untitled
+
+*.tgz
