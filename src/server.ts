@@ -7,8 +7,16 @@ import {
     ErrorCode,
     McpError,
 } from "@modelcontextprotocol/sdk/types.js";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { SpacetimeClient, SpacetimeClientConfig } from "./client.js";
 import { ToolResult } from "./types.js";
+
+const execFileAsync = promisify(execFile) as (
+    command: string,
+    args: string[],
+    options?: { cwd?: string }
+) => Promise<{ stdout: string; stderr: string }>;
 
 export interface ServerConfig extends SpacetimeClientConfig {
     defaultDatabase: string;
@@ -31,9 +39,14 @@ export interface SpacetimeClientLike {
 export interface HandlerDependencies {
     dbClient: SpacetimeClientLike;
     defaultDatabase: string;
+    host: string;
+    publishCommandRunner?: (args: { command: string; args: string[]; cwd?: string }) => Promise<{ stdout: string; stderr: string }>;
 }
 
-export function createHandlers({ dbClient, defaultDatabase }: HandlerDependencies) {
+export function createHandlers({ dbClient, defaultDatabase, host, publishCommandRunner }: HandlerDependencies) {
+    const runPublishCommand = publishCommandRunner ?? (async ({ command, args, cwd }) => {
+        return execFileAsync(command, args, { cwd });
+    });
     function formatToolResult(result: ToolResult): { content: { type: "text"; text: string }[]; isError?: boolean } {
         if (result.success) {
             const text = typeof result.data === "string" ? result.data : JSON.stringify(result.data, null, 2);
@@ -165,6 +178,28 @@ export function createHandlers({ dbClient, defaultDatabase }: HandlerDependencie
                         },
                     },
                     required: defaultDatabase ? ["query"] : ["database", "query"],
+                },
+            },
+            {
+                name: "publish_database",
+                description: "Publish or update a database using the spacetime CLI.",
+                inputSchema: {
+                    type: "object",
+                    properties: {
+                        database: {
+                            type: "string",
+                            description: `The database name. ${dbDescription}`,
+                        },
+                        project_path: {
+                            type: "string",
+                            description: "Path to the module project directory",
+                        },
+                        clear_data: {
+                            type: "boolean",
+                            description: "If true, delete existing data before publishing",
+                        },
+                    },
+                    required: defaultDatabase ? ["project_path"] : ["database", "project_path"],
                 },
             },
             {
@@ -334,6 +369,34 @@ export function createHandlers({ dbClient, defaultDatabase }: HandlerDependencie
                 }
                 return { content: [{ type: "text", text: formatSqlMarkdown(result.data) }] };
             }
+            case "publish_database": {
+                const projectPath = safeArgs.project_path as string;
+                const clearData = Boolean(safeArgs.clear_data);
+                if (!projectPath) {
+                    return { content: [{ type: "text", text: "Error: No project_path provided." }], isError: true };
+                }
+                const args = ["publish", database, "--project-path", projectPath, "-y"];
+                if (host) {
+                    args.push("--server", host);
+                }
+                if (clearData) {
+                    args.push("--delete-data");
+                }
+
+                try {
+                    const { stdout, stderr } = await runPublishCommand({
+                        command: "spacetime",
+                        args,
+                        cwd: projectPath,
+                    });
+                    const output = [stdout, stderr].map((text) => text?.trim()).filter(Boolean).join("\n");
+                    return { content: [{ type: "text", text: output || "Publish command completed." }] };
+                } catch (error: unknown) {
+                    const err = error as { stderr?: string; stdout?: string; message?: string };
+                    const details = [err.stdout, err.stderr, err.message].map((text) => text?.trim()).filter(Boolean).join("\n");
+                    return { content: [{ type: "text", text: `Error: Publish failed. ${details}` }], isError: true };
+                }
+            }
             case "describe_database": {
                 const result = await dbClient.describeDatabase(database);
                 return formatToolResult(result);
@@ -408,7 +471,7 @@ export function createServer(config: ServerConfig) {
     );
 
     const dbClient = new SpacetimeClient({ host: config.host, token: config.token });
-    const handlers = createHandlers({ dbClient, defaultDatabase: config.defaultDatabase });
+    const handlers = createHandlers({ dbClient, defaultDatabase: config.defaultDatabase, host: config.host });
 
     server.setRequestHandler(ListResourcesRequestSchema, handlers.listResources);
     server.setRequestHandler(ReadResourceRequestSchema, handlers.readResource);

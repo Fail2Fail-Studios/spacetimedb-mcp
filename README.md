@@ -164,6 +164,29 @@ Run a SQL query against the database.
 
 **Response:** Query results with schema and rows.
 
+### `publish_database`
+
+Publish or update a database using the `spacetime` CLI. Requires the CLI to be installed and available in your PATH.
+
+**Parameters:**
+- `database` (string, optional): Database name (uses default if not specified)
+- `project_path` (string, required): Path to the module project directory
+- `clear_data` (boolean, optional): If true, delete existing data before publishing
+
+**Example:**
+```json
+{
+  "tool": "publish_database",
+  "arguments": {
+    "database": "strc",
+    "project_path": "C:/Projects/spacetimedb-module",
+    "clear_data": false
+  }
+}
+```
+
+**Response:** Output from the `spacetime publish` command.
+
 ### `describe_database`
 
 Get metadata about a database.

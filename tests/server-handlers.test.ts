@@ -18,7 +18,7 @@ const createStubClient = (overrides?: Partial<SpacetimeClientLike>): SpacetimeCl
 
 describe("createHandlers", () => {
     it("requires database when no default is configured", async () => {
-        const handlers = createHandlers({ dbClient: createStubClient(), defaultDatabase: "" });
+        const handlers = createHandlers({ dbClient: createStubClient(), defaultDatabase: "", host: "" });
         const response = await handlers.callTool({ params: { name: "get_schema", arguments: {} } });
 
         expect(response.isError).toBe(true);
@@ -26,7 +26,7 @@ describe("createHandlers", () => {
     });
 
     it("exposes tool schemas based on default database", async () => {
-        const handlers = createHandlers({ dbClient: createStubClient(), defaultDatabase: "" });
+        const handlers = createHandlers({ dbClient: createStubClient(), defaultDatabase: "", host: "" });
         const result = await handlers.listTools();
         const schemaTool = result.tools.find((tool) => tool.name === "get_schema");
 
@@ -41,6 +41,7 @@ describe("createHandlers", () => {
                 testConnection: async () => ({ success: true, data: { status: "connected" } }),
             }),
             defaultDatabase: "db",
+            host: "http://localhost:3000",
         });
 
         const logsResponse = await handlers.readResource({ params: { uri: "spacetimedb://db/logs" } });
@@ -56,6 +57,7 @@ describe("createHandlers", () => {
                 runSql: async () => ({ success: true, data: [{ id: 1, name: "alpha" }] }),
             }),
             defaultDatabase: "db",
+            host: "http://localhost:3000",
         });
 
         const response = await handlers.callTool({
@@ -64,5 +66,44 @@ describe("createHandlers", () => {
 
         expect(response.content[0].text).toContain("| id | name |");
         expect(response.content[0].text).toContain("| 1 | alpha |");
+    });
+
+    it("runs publish_database through the CLI wrapper", async () => {
+        let capturedArgs: string[] = [];
+        let capturedCwd = "";
+        const handlers = createHandlers({
+            dbClient: createStubClient(),
+            defaultDatabase: "db",
+            host: "http://localhost:3000",
+            publishCommandRunner: async ({ args, cwd }) => {
+                capturedArgs = args;
+                capturedCwd = cwd ?? "";
+                return { stdout: "published", stderr: "" };
+            },
+        });
+
+        const response = await handlers.callTool({
+            params: {
+                name: "publish_database",
+                arguments: {
+                    database: "my-db",
+                    project_path: "C:/Projects/my-db",
+                    clear_data: true,
+                },
+            },
+        });
+
+        expect(response.content[0].text).toContain("published");
+        expect(capturedArgs).toEqual([
+            "publish",
+            "my-db",
+            "--project-path",
+            "C:/Projects/my-db",
+            "-y",
+            "--server",
+            "http://localhost:3000",
+            "--delete-data",
+        ]);
+        expect(capturedCwd).toBe("C:/Projects/my-db");
     });
 });
