@@ -1,7 +1,6 @@
 {
   "name": "spacetimedb-mcp",
-  "version": "1.1.0",
-  "type": "module",
+  "version": "1.0.0",
   "description": "Model Context Protocol server for SpacetimeDB - query databases, call reducers, and manage your SpacetimeDB instances",
   "main": "dist/index.js",
   "bin": {
@@ -45,7 +44,7 @@
   "devDependencies": {
     "@types/node": "^25.0.9",
     "nock": "^14.0.10",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+    "vitest": "^3.2.4",
+    "typescript": "^5.9.3"
   }
 }

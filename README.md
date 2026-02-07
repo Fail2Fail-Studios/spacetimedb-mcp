@@ -155,7 +155,7 @@ Run a SQL query against the database.
   "tool": "sql_query",
   "arguments": {
     "database": "strc",
-    "query": "SELECT * FROM teleporter_instance LIMIT 10"
+    "query": "SELECT * FROM users LIMIT 10"
   }
 }
 ```
@@ -177,18 +177,10 @@ Call a reducer function on the database.
   "tool": "call_reducer",
   "arguments": {
     "database": "strc",
-    "reducer": "CreateTeleporterEntity",
+    "reducer": "CreateUser",
     "args": [
-      "Teleporter_E",
-      true,
-      false,
-      0,
-      0,
-      1,
-      {"x": 503, "y": 3, "z": 1003},
-      "Teleporter_B",
-      1,
-      {"x": 1000, "y": 3, "z": 1000}
+      "username_123",
+      "user@example.com"
     ]
   }
 }
@@ -246,7 +238,7 @@ Use sql_query to SELECT data from tables
 
 **Create Entities:**
 ```
-Use call_reducer to invoke reducer functions like CreateTeleporterEntity
+Use call_reducer to invoke reducer functions like CreateUser
 ```
 
 **Monitor Activity:**
@@ -295,16 +287,29 @@ npm run build
 
 This compiles TypeScript source files to `dist/index.js`.
 
+### Testing
+
+```bash
+npm test
+```
+
 ### Project Structure
 
 ```
 spacetimedb-mcp/
 ├── src/
-│   └── index.ts          # Main MCP server implementation
+│   ├── client.ts         # SpacetimeDB HTTP client
+│   ├── index.ts          # CLI entry point
+│   ├── server.ts         # MCP server wiring
+│   └── types.ts          # Shared type definitions
 ├── dist/
 │   └── index.js          # Compiled output
+├── tests/
+│   ├── client.test.ts    # Client unit tests
+│   └── server-handlers.test.ts # Server handler unit tests
 ├── package.json
 ├── tsconfig.json
+├── vitest.config.ts
 └── README.md
 ```
 

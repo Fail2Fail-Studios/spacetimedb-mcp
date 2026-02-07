@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-02-07
+
+### Added
+- Testing infrastructure using Vitest and Nock
+- Unit tests for SpacetimeDB client and MCP server handlers
+- `npm test` script for running the test suite
+- Type definitions extracted to `src/types.ts`
+
+### Changed
+- Refactored monolithic `src/index.ts` into modular components (`client.ts`, `server.ts`)
+- Updated project to use ECMAScript Modules (`"type": "module"`)
+- Improved code organization for better maintainability and testability
+
 ## [1.0.0] - 2024-01-XX
 
 ### Added
