@@ -177,4 +177,37 @@ describe("SpacetimeClient", () => {
         expect(missing.success).toBe(false);
         expect(missing.error).toContain("not found");
     });
+
+    it("handles database management endpoints", async () => {
+        const client = new SpacetimeClient({ host: HOST, token: "token" });
+
+        nock(HOST).get("/v1/database/alpha").reply(200, { name: "alpha" });
+        nock(HOST).get("/v1/database/alpha/identity").reply(200, { identity: "0xabc" });
+        nock(HOST).delete("/v1/database/alpha").reply(200, { ok: true });
+        nock(HOST).get("/v1/identity/0xabc/databases").reply(200, { addresses: ["alpha"] });
+        nock(HOST).post("/v1/database/0xabc/names", "alias-a").reply(200, { Success: { domain: "alias-a" } });
+        nock(HOST).get("/v1/database/0xabc/names").reply(200, { names: ["alias-a"] });
+        nock(HOST).delete("/v1/database/beta").reply(404, { error: "missing" });
+
+        const describe = await client.describeDatabase("alpha");
+        const identity = await client.getDatabaseIdentity("alpha");
+        const deleted = await client.deleteDatabase("alpha");
+        const list = await client.listDatabases("0xabc");
+        const aliasAdd = await client.addDatabaseAlias("0xabc", "alias-a");
+        const aliases = await client.getDatabaseAliases("0xabc");
+        const deleteFail = await client.deleteDatabase("beta");
+
+        expect(describe.success).toBe(true);
+        expect(describe.data).toEqual({ name: "alpha" });
+        expect(identity.success).toBe(true);
+        expect(identity.data).toEqual({ identity: "0xabc" });
+        expect(deleted.success).toBe(true);
+        expect(list.success).toBe(true);
+        expect(list.data).toEqual({ addresses: ["alpha"] });
+        expect(aliasAdd.success).toBe(true);
+        expect(aliases.success).toBe(true);
+        expect(aliases.data).toEqual({ names: ["alias-a"] });
+        expect(deleteFail.success).toBe(false);
+        expect(deleteFail.error).toContain("HTTP 404");
+    });
 });

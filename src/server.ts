@@ -20,6 +20,12 @@ export interface SpacetimeClientLike {
     runSql(database: string, query: string): Promise<ToolResult>;
     callReducer(database: string, reducer: string, args: unknown[]): Promise<ToolResult>;
     getLogs(database: string, lineCount?: number): Promise<ToolResult>;
+    describeDatabase(database: string): Promise<ToolResult>;
+    getDatabaseIdentity(database: string): Promise<ToolResult>;
+    deleteDatabase(database: string): Promise<ToolResult>;
+    listDatabases(identity: string): Promise<ToolResult>;
+    addDatabaseAlias(identity: string, name: string): Promise<ToolResult>;
+    getDatabaseAliases(identity: string): Promise<ToolResult>;
 }
 
 export interface HandlerDependencies {
@@ -37,6 +43,41 @@ export function createHandlers({ dbClient, defaultDatabase }: HandlerDependencie
             content: [{ type: "text", text: `Error: ${result.error}` }],
             isError: true,
         };
+    }
+
+    function formatSqlMarkdown(data: unknown): string {
+        if (!Array.isArray(data)) {
+            return typeof data === "string" ? data : JSON.stringify(data, null, 2);
+        }
+
+        if (data.length === 0) {
+            return "";
+        }
+
+        const firstRow = data[0];
+        if (!firstRow || typeof firstRow !== "object" || Array.isArray(firstRow)) {
+            return JSON.stringify(data, null, 2);
+        }
+
+        const headers = Object.keys(firstRow as Record<string, unknown>);
+        if (headers.length === 0) {
+            return JSON.stringify(data, null, 2);
+        }
+
+        const headerLine = `| ${headers.join(" | ")} |`;
+        const separatorLine = `| ${headers.map(() => "---").join(" | ")} |`;
+        const rows = data.map((row) => {
+            const record = row as Record<string, unknown>;
+            const cells = headers.map((header) => {
+                const value = record[header];
+                if (value === null || value === undefined) return "";
+                if (typeof value === "object") return JSON.stringify(value);
+                return String(value);
+            });
+            return `| ${cells.join(" | ")} |`;
+        });
+
+        return [headerLine, separatorLine, ...rows].join("\n");
     }
 
     const listResources = async () => {
@@ -104,24 +145,116 @@ export function createHandlers({ dbClient, defaultDatabase }: HandlerDependencie
                         required: defaultDatabase ? [] : ["database"],
                     },
                 },
-                {
-                    name: "sql_query",
-                    description: "Run a SQL query against the database to inspect or modify data.",
-                    inputSchema: {
-                        type: "object",
-                        properties: {
+            {
+                name: "sql_query",
+                description: "Run a SQL query against the database to inspect or modify data.",
+                inputSchema: {
+                    type: "object",
+                    properties: {
                             database: {
                                 type: "string",
                                 description: `The database name. ${dbDescription}`,
                             },
-                            query: {
-                                type: "string",
-                                description: "The SQL query (e.g., SELECT * FROM users LIMIT 10)",
-                            },
+                        query: {
+                            type: "string",
+                            description: "The SQL query (e.g., SELECT * FROM users LIMIT 10)",
                         },
-                        required: defaultDatabase ? ["query"] : ["database", "query"],
+                        format: {
+                            type: "string",
+                            description: "Optional output format: json (default) or markdown",
+                        },
                     },
+                    required: defaultDatabase ? ["query"] : ["database", "query"],
                 },
+            },
+            {
+                name: "describe_database",
+                description: "Get metadata about a database.",
+                inputSchema: {
+                    type: "object",
+                    properties: {
+                        database: {
+                            type: "string",
+                            description: `The database name. ${dbDescription}`,
+                        },
+                    },
+                    required: defaultDatabase ? [] : ["database"],
+                },
+            },
+            {
+                name: "get_database_identity",
+                description: "Get the identity for a database name.",
+                inputSchema: {
+                    type: "object",
+                    properties: {
+                        database: {
+                            type: "string",
+                            description: `The database name. ${dbDescription}`,
+                        },
+                    },
+                    required: defaultDatabase ? [] : ["database"],
+                },
+            },
+            {
+                name: "delete_database",
+                description: "Delete a database.",
+                inputSchema: {
+                    type: "object",
+                    properties: {
+                        database: {
+                            type: "string",
+                            description: `The database name. ${dbDescription}`,
+                        },
+                    },
+                    required: defaultDatabase ? [] : ["database"],
+                },
+            },
+            {
+                name: "list_databases",
+                description: "List databases owned by an identity.",
+                inputSchema: {
+                    type: "object",
+                    properties: {
+                        identity: {
+                            type: "string",
+                            description: "The SpacetimeDB identity to list databases for",
+                        },
+                    },
+                    required: ["identity"],
+                },
+            },
+            {
+                name: "add_database_alias",
+                description: "Add a friendly alias to a database identity.",
+                inputSchema: {
+                    type: "object",
+                    properties: {
+                        identity: {
+                            type: "string",
+                            description: "The database identity",
+                        },
+                        name: {
+                            type: "string",
+                            description: "The alias to add",
+                        },
+                    },
+                    required: ["identity", "name"],
+                },
+            },
+            {
+                name: "get_database_aliases",
+                description: "List aliases for a database identity.",
+                inputSchema: {
+                    type: "object",
+                    properties: {
+                        identity: {
+                            type: "string",
+                            description: "The database identity",
+                        },
+                    },
+                    required: ["identity"],
+                },
+            },
                 {
                     name: "call_reducer",
                     description: "Call a reducer function on the database.",
@@ -191,10 +324,51 @@ export function createHandlers({ dbClient, defaultDatabase }: HandlerDependencie
             }
             case "sql_query": {
                 const query = safeArgs.query as string;
+                const format = (safeArgs.format as string) || "json";
                 if (!query) {
                     return { content: [{ type: "text", text: "Error: No query provided." }], isError: true };
                 }
                 const result = await dbClient.runSql(database, query);
+                if (!result.success || format !== "markdown") {
+                    return formatToolResult(result);
+                }
+                return { content: [{ type: "text", text: formatSqlMarkdown(result.data) }] };
+            }
+            case "describe_database": {
+                const result = await dbClient.describeDatabase(database);
+                return formatToolResult(result);
+            }
+            case "get_database_identity": {
+                const result = await dbClient.getDatabaseIdentity(database);
+                return formatToolResult(result);
+            }
+            case "delete_database": {
+                const result = await dbClient.deleteDatabase(database);
+                return formatToolResult(result);
+            }
+            case "list_databases": {
+                const identity = safeArgs.identity as string;
+                if (!identity) {
+                    return { content: [{ type: "text", text: "Error: No identity provided." }], isError: true };
+                }
+                const result = await dbClient.listDatabases(identity);
+                return formatToolResult(result);
+            }
+            case "add_database_alias": {
+                const identity = safeArgs.identity as string;
+                const name = safeArgs.name as string;
+                if (!identity || !name) {
+                    return { content: [{ type: "text", text: "Error: Identity and name are required." }], isError: true };
+                }
+                const result = await dbClient.addDatabaseAlias(identity, name);
+                return formatToolResult(result);
+            }
+            case "get_database_aliases": {
+                const identity = safeArgs.identity as string;
+                if (!identity) {
+                    return { content: [{ type: "text", text: "Error: No identity provided." }], isError: true };
+                }
+                const result = await dbClient.getDatabaseAliases(identity);
                 return formatToolResult(result);
             }
             case "call_reducer": {

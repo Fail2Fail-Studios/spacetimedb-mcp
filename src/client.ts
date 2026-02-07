@@ -147,6 +147,118 @@ export class SpacetimeClient {
         }
     }
 
+    async describeDatabase(database: string): Promise<ToolResult> {
+        try {
+            const response = await this.client.get(`/v1/database/${database}`);
+
+            if (response.status !== 200) {
+                return {
+                    success: false,
+                    error: `HTTP ${response.status}: ${JSON.stringify(response.data)}`,
+                };
+            }
+
+            return { success: true, data: response.data };
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Unknown error";
+            return { success: false, error: `Failed to describe database: ${message}` };
+        }
+    }
+
+    async getDatabaseIdentity(database: string): Promise<ToolResult> {
+        try {
+            const response = await this.client.get(`/v1/database/${database}/identity`);
+
+            if (response.status !== 200) {
+                return {
+                    success: false,
+                    error: `HTTP ${response.status}: ${JSON.stringify(response.data)}`,
+                };
+            }
+
+            return { success: true, data: response.data };
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Unknown error";
+            return { success: false, error: `Failed to get database identity: ${message}` };
+        }
+    }
+
+    async deleteDatabase(database: string): Promise<ToolResult> {
+        try {
+            const response = await this.client.delete(`/v1/database/${database}`);
+
+            if (response.status !== 200) {
+                return {
+                    success: false,
+                    error: `HTTP ${response.status}: ${JSON.stringify(response.data)}`,
+                };
+            }
+
+            return { success: true, data: response.data };
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Unknown error";
+            return { success: false, error: `Failed to delete database: ${message}` };
+        }
+    }
+
+    async listDatabases(identity: string): Promise<ToolResult> {
+        try {
+            const response = await this.client.get(`/v1/identity/${identity}/databases`);
+
+            if (response.status !== 200) {
+                return {
+                    success: false,
+                    error: `HTTP ${response.status}: ${JSON.stringify(response.data)}`,
+                };
+            }
+
+            return { success: true, data: response.data };
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Unknown error";
+            return { success: false, error: `Failed to list databases: ${message}` };
+        }
+    }
+
+    async addDatabaseAlias(identity: string, name: string): Promise<ToolResult> {
+        try {
+            const response = await this.client.post(
+                `/v1/database/${identity}/names`,
+                name,
+                { headers: { "Content-Type": "text/plain" } }
+            );
+
+            if (response.status !== 200) {
+                return {
+                    success: false,
+                    error: `HTTP ${response.status}: ${JSON.stringify(response.data)}`,
+                };
+            }
+
+            return { success: true, data: response.data };
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Unknown error";
+            return { success: false, error: `Failed to add database alias: ${message}` };
+        }
+    }
+
+    async getDatabaseAliases(identity: string): Promise<ToolResult> {
+        try {
+            const response = await this.client.get(`/v1/database/${identity}/names`);
+
+            if (response.status !== 200) {
+                return {
+                    success: false,
+                    error: `HTTP ${response.status}: ${JSON.stringify(response.data)}`,
+                };
+            }
+
+            return { success: true, data: response.data };
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Unknown error";
+            return { success: false, error: `Failed to get database aliases: ${message}` };
+        }
+    }
+
     private parseLogData(data: unknown): LogLine[] {
         const logLines: LogLine[] = [];
 

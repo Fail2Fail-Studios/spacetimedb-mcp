@@ -7,6 +7,12 @@ const createStubClient = (overrides?: Partial<SpacetimeClientLike>): SpacetimeCl
     runSql: async () => ({ success: true, data: [{ value: 1 }] }),
     callReducer: async () => ({ success: true, data: { ok: true } }),
     getLogs: async () => ({ success: true, data: "logs" }),
+    describeDatabase: async () => ({ success: true, data: { name: "db" } }),
+    getDatabaseIdentity: async () => ({ success: true, data: { identity: "0xabc" } }),
+    deleteDatabase: async () => ({ success: true, data: { ok: true } }),
+    listDatabases: async () => ({ success: true, data: { addresses: ["db"] } }),
+    addDatabaseAlias: async () => ({ success: true, data: { Success: { domain: "alias" } } }),
+    getDatabaseAliases: async () => ({ success: true, data: { names: ["alias"] } }),
     ...overrides,
 });
 
@@ -42,5 +48,21 @@ describe("createHandlers", () => {
 
         expect(logsResponse.contents[0].text).toBe("log-output");
         expect(testResponse.content[0].text).toContain("connected");
+    });
+
+    it("formats SQL results as markdown when requested", async () => {
+        const handlers = createHandlers({
+            dbClient: createStubClient({
+                runSql: async () => ({ success: true, data: [{ id: 1, name: "alpha" }] }),
+            }),
+            defaultDatabase: "db",
+        });
+
+        const response = await handlers.callTool({
+            params: { name: "sql_query", arguments: { query: "SELECT *", format: "markdown" } },
+        });
+
+        expect(response.content[0].text).toContain("| id | name |");
+        expect(response.content[0].text).toContain("| 1 | alpha |");
     });
 });

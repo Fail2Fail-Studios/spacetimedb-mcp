@@ -5,7 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0] - 2026-02-07
+## [1.2.0] - 2026-02-07
+
+### Added
+- Database management tools for describing, deleting, and resolving identities
+- Identity-based database listing tool
+- Database alias management tools for adding and listing names
+- Optional markdown formatting for SQL query results
 
 ### Added
 - Testing infrastructure using Vitest and Nock
@@ -18,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated project to use ECMAScript Modules (`"type": "module"`)
 - Improved code organization for better maintainability and testability
 
-## [1.0.0] - 2024-01-XX
+## [1.1.0] - 2026-02-07
 
 ### Added
 - Initial release of spacetimedb-mcp

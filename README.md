@@ -148,6 +148,7 @@ Run a SQL query against the database.
 **Parameters:**
 - `database` (string, optional): Database name (uses default if not specified)
 - `query` (string, required): SQL query to execute
+- `format` (string, optional): Output format (`json` or `markdown`, default `json`)
 
 **Example:**
 ```json
@@ -155,12 +156,129 @@ Run a SQL query against the database.
   "tool": "sql_query",
   "arguments": {
     "database": "strc",
-    "query": "SELECT * FROM users LIMIT 10"
+    "query": "SELECT * FROM users LIMIT 10",
+    "format": "markdown"
   }
 }
 ```
 
 **Response:** Query results with schema and rows.
+
+### `describe_database`
+
+Get metadata about a database.
+
+**Parameters:**
+- `database` (string, optional): Database name (uses default if not specified)
+
+**Example:**
+```json
+{
+  "tool": "describe_database",
+  "arguments": {
+    "database": "strc"
+  }
+}
+```
+
+**Response:** Database metadata as JSON.
+
+### `get_database_identity`
+
+Get the identity for a database name.
+
+**Parameters:**
+- `database` (string, optional): Database name (uses default if not specified)
+
+**Example:**
+```json
+{
+  "tool": "get_database_identity",
+  "arguments": {
+    "database": "strc"
+  }
+}
+```
+
+**Response:** Identity string for the database.
+
+### `delete_database`
+
+Delete a database.
+
+**Parameters:**
+- `database` (string, optional): Database name (uses default if not specified)
+
+**Example:**
+```json
+{
+  "tool": "delete_database",
+  "arguments": {
+    "database": "strc"
+  }
+}
+```
+
+**Response:** Result from the delete operation.
+
+### `list_databases`
+
+List databases owned by an identity.
+
+**Parameters:**
+- `identity` (string, required): SpacetimeDB identity
+
+**Example:**
+```json
+{
+  "tool": "list_databases",
+  "arguments": {
+    "identity": "0xabc123"
+  }
+}
+```
+
+**Response:** Array of database addresses.
+
+### `add_database_alias`
+
+Add a friendly alias to a database identity.
+
+**Parameters:**
+- `identity` (string, required): Database identity
+- `name` (string, required): Alias to add
+
+**Example:**
+```json
+{
+  "tool": "add_database_alias",
+  "arguments": {
+    "identity": "0xabc123",
+    "name": "chat-app"
+  }
+}
+```
+
+**Response:** Result from the alias creation.
+
+### `get_database_aliases`
+
+List aliases for a database identity.
+
+**Parameters:**
+- `identity` (string, required): Database identity
+
+**Example:**
+```json
+{
+  "tool": "get_database_aliases",
+  "arguments": {
+    "identity": "0xabc123"
+  }
+}
+```
+
+**Response:** Array of aliases.
 
 ### `call_reducer`
 
