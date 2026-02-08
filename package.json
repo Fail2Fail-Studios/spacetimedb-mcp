@@ -10,6 +10,7 @@
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
+    "publish-release": "npm run build && npm test && npm pack --silent && npm publish --access public",
     "prepack": "npm run build",
     "prepublishOnly": "npm run build"
   },
