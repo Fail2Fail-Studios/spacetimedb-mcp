@@ -101,6 +101,8 @@ Then configure:
 | `SPACETIMEDB_TOKEN` | Yes | - | Authentication token (Bearer token) |
 | `SPACETIMEDB_DEFAULT_DATABASE` | No | - | Default database name to use when not specified in tool calls |
 
+> **Tip:** You can use `spacetime login show --token` to get your authentication token.
+
 ## Available Tools
 
 ### `test_connection`
